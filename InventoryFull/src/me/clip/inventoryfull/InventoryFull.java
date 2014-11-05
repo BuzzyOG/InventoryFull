@@ -73,8 +73,7 @@ public class InventoryFull extends JavaPlugin implements Listener {
 
 	private void initHooks() {
 
-		hookActionAnnouncer = Bukkit.getPluginManager().isPluginEnabled(
-				"ActionAnnouncer");
+		hookActionAnnouncer = Bukkit.getPluginManager().isPluginEnabled("ActionAnnouncer");
 
 		if (hookActionAnnouncer) {
 			getLogger().info("*** Hooked into ActionAnnouncer! ***");
@@ -82,8 +81,7 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			getLogger().info("*** Could not hook into ActionAnnouncer! ***");
 		}
 
-		hookTitleManager = Bukkit.getPluginManager().isPluginEnabled(
-				"TitleManager");
+		hookTitleManager = Bukkit.getPluginManager().isPluginEnabled("TitleManager");
 
 		if (hookTitleManager) {
 			getLogger().info("*** Hooked into TitleManager! ***");
@@ -91,8 +89,7 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			getLogger().info("*** Could not hook into TitleManager! ***");
 		}
 
-		hookHolo = Bukkit.getPluginManager().isPluginEnabled(
-				"HolographicDisplays");
+		hookHolo = Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays");
 
 		if (hookHolo) {
 			getLogger().info("*** Hooked into HolographicDisplays! ***");
@@ -113,23 +110,19 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		c.addDefault("cooldown_time", 5);
 		c.addDefault("max_alerts_until_cooldown", 5);
 		c.addDefault("chat_message.use_chat_message", true);
-		c.addDefault("chat_message.message",
-				Arrays.asList(new String[] { "&cYour inventory is full!" }));
+		c.addDefault("chat_message.message", Arrays.asList(new String[] { "&cYour inventory is full!" }));
 		c.addDefault("actionannouncer.use_actionbar", false);
 		c.addDefault("actionannouncer.message", "&cYour inventory is full!");
 		c.addDefault("titlemanager.use_title", false);
-		c.addDefault("titlemanager.title",
-				"&cYou don't have room in your inventory");
+		c.addDefault("titlemanager.title", "&cYou don't have room in your inventory");
 		c.addDefault("titlemanager.subtitle", "to collect that &f%block%&c!");
 		c.addDefault("titlemanager.fade_in", 12);
 		c.addDefault("titlemanager.fade_out", 12);
 		c.addDefault("titlemanager.duration", 20);
 		c.addDefault("titlemanager.use_actionbar", false);
-		c.addDefault("titlemanager.actionbar_message",
-				"&cYou don't have room in your inventory");
+		c.addDefault("titlemanager.actionbar_message", "&cYou don't have room in your inventory");
 		c.addDefault("holographicdisplays.use_hologram", false);
-		c.addDefault("holographicdisplays.message", Arrays.asList(new String[] {
-				"&cYour inventory", "&cis full!" }));
+		c.addDefault("holographicdisplays.message", Arrays.asList(new String[] { "&cYour inventory", "&cis full!" }));
 		c.addDefault("holographicdisplays.display_time", 3);
 		c.options().copyDefaults(true);
 		saveConfig();
@@ -170,11 +163,11 @@ public class InventoryFull extends JavaPlugin implements Listener {
 
 			for (ItemStack is : i.getContents()) {
 				if (is == null) {
+					//empty slot
 					return;
 				}
-				if (is.getType().equals(drop.getType())
-						&& is.getAmount() + drop.getAmount() <= is
-								.getMaxStackSize()) {
+				if (is.getType().equals(drop.getType()) && is.getAmount()+drop.getAmount() <= is.getMaxStackSize()) {
+					//will stack on existing itemstack
 					return;
 				}
 			}
@@ -187,20 +180,17 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			if (InventoryFull.active.get(p.getName()) >= options.getMaxAlerts()) {
 				return;
 			} else {
-				InventoryFull.active.put(p.getName(),
-						InventoryFull.active.get(p.getName()) + 1);
-				delayDecrease(p.getName());
+				InventoryFull.active.put(p.getName(), InventoryFull.active.get(p.getName())+1);
 			}
 		} else {
 			InventoryFull.active.put(p.getName(), 1);
-			delayDecrease(p.getName());
 		}
 
+		delayDecrease(p.getName());
+		
 		if (options.useChatMsg()) {
 			for (String line : options.getChatMsg()) {
-				sms(p,
-						line.replace("%player%", p.getName()).replace(
-								"%block%", wontFit));
+				sms(p, line.replace("%player%", p.getName()).replace("%block%", wontFit));
 			}
 		}
 
@@ -209,32 +199,30 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			Vector v = p.getLocation().getDirection().multiply(1);
 			Location dLoc = p.getEyeLocation().add(v);
 
-			Hologram full = HolographicDisplaysAPI.createIndividualHologram(
-					this, dLoc, p, "");
+			Hologram full = HolographicDisplaysAPI.createIndividualHologram(this, dLoc, p, "");
 
 			int pos = 0;
+			
 			for (String line : options.getHoloMsg()) {
+				
 				if (pos == 0) {
 					full.setLine(0, ChatColor.translateAlternateColorCodes(
-							'&',
-							line.replace("%player%", p.getName()).replace(
-									"%block%", wontFit)));
+							'&', line.replace("%player%", p.getName()).replace("%block%", wontFit)));
 				} else {
 					full.addLine(ChatColor.translateAlternateColorCodes(
-							'&',
-							line.replace("%player%", p.getName()).replace(
-									"%block%", wontFit)));
+							'&', line.replace("%player%", p.getName()).replace("%block%", wontFit)));
 				}
-				pos = pos + 1;
+				pos = pos+1;
 			}
+			
 			full.update();
-			removeHologram(full, p.getName());
+			removeHologram(full);
 		}
 
 		if (hookActionAnnouncer && options.useActionAnnouncer()) {
 			ActionAPI.sendPlayerAnnouncement(p,
 					options.getActionMsg().replace("%player%", p.getName())
-							.replace("%block%", wontFit));
+										  .replace("%block%", wontFit));
 		}
 
 		if (hookTitleManager && options.useTitleManager()) {
@@ -262,7 +250,9 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			String[] args) {
 
 		if (s instanceof Player) {
+			
 			Player p = (Player) s;
+			
 			if (!p.hasPermission("inventoryfull.admin")) {
 				sms(s, "&cYou don't have permission to do that!");
 				return true;
@@ -270,23 +260,27 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		}
 
 		if (args.length == 0) {
+			
 			sms(s, "&cInventoryFull &fversion " + getDescription().getVersion());
 			sms(s, "&7Created by: &cextended_clip");
 			sms(s, "&7/invfull reload &f- &cReload config file");
+			
 		} else if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+			
 			reloadConfig();
 			saveConfig();
 			options = new IFOptions(this);
 			initHooks();
 			sms(s, "&cInventoryFull &7configuration successfully reloaded!");
+			
 		} else {
+			
 			sms(s, "&cIncorrect usage! Use &7/inventoryfull");
 		}
-
 		return true;
 	}
 
-	public void removeHologram(final Hologram h, final String p) {
+	public void removeHologram(final Hologram h) {
 		Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 			public void run() {
 
@@ -304,7 +298,7 @@ public class InventoryFull extends JavaPlugin implements Listener {
 						InventoryFull.active.remove(p);
 					} else {
 						InventoryFull.active.put(p,
-								InventoryFull.active.get(p) - 1);
+								InventoryFull.active.get(p)-1);
 					}
 				}
 
