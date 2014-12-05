@@ -2,11 +2,9 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
-	<classpathentry kind="lib" path="C:/Users/Ryan/Downloads/spigot (30).jar"/>
-	<classpathentry kind="lib" path="C:/Users/Ryan/Downloads/bukkit-1.7.10-R0.1-20140817.175650-8.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Ryan/Desktop/dev/HolographicDisplays.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Ryan/Desktop/dev/ActionAnnouncer.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Ryan/Desktop/WorldGuard.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Ryan/Downloads/TitleManager-1.1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Ryan/Desktop/Minecraft/Bukkit_Spigot/spigot-api-1.8-R0.1-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Ryan/Downloads/TitleManager-1.2.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Ryan/Downloads/HolographicDisplays.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Ryan/Desktop/ActionAnnouncer.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

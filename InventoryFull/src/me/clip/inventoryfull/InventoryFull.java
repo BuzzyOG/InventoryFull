@@ -128,8 +128,12 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		saveConfig();
 	}
 
-	@EventHandler(priority = EventPriority.HIGH)
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void onBlockBreak(BlockBreakEvent e) {
+		
+		if (e.isCancelled()) {
+			return;
+		}
 
 		Player p = e.getPlayer();
 
@@ -153,19 +157,21 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			return;
 		}
 
-		if (b.getDrops() == null || b.getDrops().isEmpty()) {
+		if (b.getDrops(i.getItemInHand()) == null || b.getDrops(i.getItemInHand()).isEmpty()) {
 			return;
 		}
 
 		String wontFit = "block";
 
-		for (ItemStack drop : b.getDrops()) {
+		for (ItemStack drop : b.getDrops(i.getItemInHand())) {
 
 			for (ItemStack is : i.getContents()) {
+				
 				if (is == null) {
 					//empty slot
 					return;
 				}
+				
 				if (is.getType().equals(drop.getType()) && is.getAmount()+drop.getAmount() <= is.getMaxStackSize()) {
 					//will stack on existing itemstack
 					return;
@@ -177,19 +183,26 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		}
 
 		if (InventoryFull.active.containsKey(p.getName())) {
+			
 			if (InventoryFull.active.get(p.getName()) >= options.getMaxAlerts()) {
+				
 				return;
 			} else {
+				
 				InventoryFull.active.put(p.getName(), InventoryFull.active.get(p.getName())+1);
 			}
+			
 		} else {
+			
 			InventoryFull.active.put(p.getName(), 1);
 		}
 
 		delayDecrease(p.getName());
 		
 		if (options.useChatMsg()) {
+			
 			for (String line : options.getChatMsg()) {
+				
 				sms(p, line.replace("%player%", p.getName()).replace("%block%", wontFit));
 			}
 		}
@@ -220,9 +233,7 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		}
 
 		if (hookActionAnnouncer && options.useActionAnnouncer()) {
-			ActionAPI.sendPlayerAnnouncement(p,
-					options.getActionMsg().replace("%player%", p.getName())
-										  .replace("%block%", wontFit));
+			ActionAPI.sendPlayerAnnouncement(p, options.getActionMsg().replace("%player%", p.getName()).replace("%block%", wontFit));
 		}
 
 		if (hookTitleManager && options.useTitleManager()) {

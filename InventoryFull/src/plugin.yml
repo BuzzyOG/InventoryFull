@@ -1,7 +1,7 @@
 name: InventoryFull
 author: extended_clip
 main: me.clip.inventoryfull.InventoryFull
-version: 1.4.3
+version: 1.5
 description: Be alerted when your inventory is full!
 softdepend: [HolographicDisplays, TitleManager, ActionAnnouncer]
 permissions:
