@@ -21,20 +21,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 package me.clip.inventoryfull;
 
-import io.puharesource.mc.titlemanager.api.ActionbarTitleObject;
-import io.puharesource.mc.titlemanager.api.TitleObject;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import me.clip.actionannouncer.ActionAPI;
+import me.clip.inventoryfull.hooks.ActionMsg;
+import me.clip.inventoryfull.hooks.HoloMsg;
+import me.clip.inventoryfull.hooks.TitleMsg;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
@@ -48,20 +46,22 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Vector;
-
-import com.gmail.filoghost.holograms.api.Hologram;
-import com.gmail.filoghost.holograms.api.HolographicDisplaysAPI;
 
 public class InventoryFull extends JavaPlugin implements Listener {
+	
+	protected HoloMsg holo;
+	protected ActionMsg aa;
+	protected TitleMsg tm;
 
-	static Map<String, Integer> active = new HashMap<String, Integer>();
+	protected static Map<String, Integer> active = new HashMap<String, Integer>();
 
-	static IFOptions options;
+	public static IFOptions options;
 
-	private boolean hookTitleManager;
-	private boolean hookActionAnnouncer;
-	private boolean hookHolo;
+	protected boolean hookTitleManager;
+	protected boolean hookActionAnnouncer;
+	protected boolean hookHolo;
+	
+	private boolean hookAutoSell;
 
 	@Override
 	public void onEnable() {
@@ -72,10 +72,18 @@ public class InventoryFull extends JavaPlugin implements Listener {
 	}
 
 	private void initHooks() {
+		
+		hookAutoSell = Bukkit.getPluginManager().isPluginEnabled("AutoSell");
+
+		if (hookAutoSell) {
+			Bukkit.getServer().getPluginManager().registerEvents(new AutoSellListener(this), this);
+			getLogger().info("*** Hooked into AutoSell! ***");
+		}
 
 		hookActionAnnouncer = Bukkit.getPluginManager().isPluginEnabled("ActionAnnouncer");
 
 		if (hookActionAnnouncer) {
+			aa = new ActionMsg();
 			getLogger().info("*** Hooked into ActionAnnouncer! ***");
 		} else {
 			getLogger().info("*** Could not hook into ActionAnnouncer! ***");
@@ -84,6 +92,7 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		hookTitleManager = Bukkit.getPluginManager().isPluginEnabled("TitleManager");
 
 		if (hookTitleManager) {
+			tm = new TitleMsg();
 			getLogger().info("*** Hooked into TitleManager! ***");
 		} else {
 			getLogger().info("*** Could not hook into TitleManager! ***");
@@ -92,10 +101,10 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		hookHolo = Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays");
 
 		if (hookHolo) {
+			holo = new HoloMsg(this);
 			getLogger().info("*** Hooked into HolographicDisplays! ***");
 		} else {
-			getLogger()
-					.info("*** Could not hook into HolographicDisplays! ***");
+			getLogger().info("*** Could not hook into HolographicDisplays! ***");
 		}
 	}
 
@@ -161,7 +170,9 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			return;
 		}
 
-		String wontFit = "block";
+		String wontFit = "";
+		
+		ItemStack wont = null;
 
 		for (ItemStack drop : b.getDrops(i.getItemInHand())) {
 
@@ -179,7 +190,12 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			}
 
 			wontFit = drop.getType().name();
+			wont = drop;
 			break;
+		}
+		
+		if (wont == null) {
+			return;
 		}
 
 		if (InventoryFull.active.containsKey(p.getName())) {
@@ -199,60 +215,37 @@ public class InventoryFull extends JavaPlugin implements Listener {
 
 		delayDecrease(p.getName());
 		
+		InventoryFullEvent event = new InventoryFullEvent(p, wont);
+		Bukkit.getPluginManager().callEvent(event);
+		
 		if (options.useChatMsg()) {
-			
 			for (String line : options.getChatMsg()) {
-				
 				sms(p, line.replace("%player%", p.getName()).replace("%block%", wontFit));
 			}
 		}
 
 		if (hookHolo && options.useHolo()) {
-
-			Vector v = p.getLocation().getDirection().multiply(1);
-			Location dLoc = p.getEyeLocation().add(v);
-
-			Hologram full = HolographicDisplaysAPI.createIndividualHologram(this, dLoc, p, "");
-
-			int pos = 0;
-			
-			for (String line : options.getHoloMsg()) {
-				
-				if (pos == 0) {
-					full.setLine(0, ChatColor.translateAlternateColorCodes(
-							'&', line.replace("%player%", p.getName()).replace("%block%", wontFit)));
-				} else {
-					full.addLine(ChatColor.translateAlternateColorCodes(
-							'&', line.replace("%player%", p.getName()).replace("%block%", wontFit)));
-				}
-				pos = pos+1;
+			if (holo != null) {
+				holo.send(p, options.getHoloMsg(), wontFit);
 			}
-			
-			full.update();
-			removeHologram(full);
 		}
 
 		if (hookActionAnnouncer && options.useActionAnnouncer()) {
-			ActionAPI.sendPlayerAnnouncement(p, options.getActionMsg().replace("%player%", p.getName()).replace("%block%", wontFit));
+			if (aa != null) {
+				aa.send(p, options.getActionMsg(), wontFit);
+			}
 		}
 
 		if (hookTitleManager && options.useTitleManager()) {
-			TitleObject t = new TitleObject(options.getTitleMsg()
-					.replace("%player%", p.getName())
-					.replace("%block%", wontFit), options.getSubTitleMsg()
-					.replace("%player%", p.getName())
-					.replace("%block%", wontFit));
-			t.setFadeIn(options.getFadeIn());
-			t.setStay(options.getDuration());
-			t.setFadeOut(options.getFadeOut());
-			t.send(p);
+			if (tm != null) {
+				tm.sendTitle(p, options.getTitleMsg(), options.getSubTitleMsg(), wontFit, options.getFadeIn(), options.getDuration(), options.getFadeOut());
+			}
 		}
 
 		if (hookTitleManager && options.useTitleABar()) {
-			ActionbarTitleObject ta = new ActionbarTitleObject(options
-					.getTitleABarMsg().replace("%player%", p.getName())
-					.replace("%block%", wontFit));
-			ta.send(p);
+			if (tm != null) {
+				tm.sendActionbar(p, options.getTitleABarMsg(), wontFit);
+			}
 		}
 	}
 
@@ -291,15 +284,6 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		return true;
 	}
 
-	public void removeHologram(final Hologram h) {
-		Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-			public void run() {
-
-				h.delete();
-			}
-		}, 20L * options.getHoloTime());
-	}
-
 	public void delayDecrease(final String p) {
 		Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 			public void run() {
@@ -321,7 +305,7 @@ public class InventoryFull extends JavaPlugin implements Listener {
 		s.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
 	}
 
-	private static List<Material> tools = Arrays.asList(new Material[] {
+	public static List<Material> tools = Arrays.asList(new Material[] {
 			Material.STONE_AXE, Material.STONE_HOE, Material.STONE_PICKAXE,
 			Material.STONE_SPADE, Material.WOOD_AXE, Material.WOOD_HOE,
 			Material.WOOD_PICKAXE, Material.WOOD_SPADE, Material.IRON_AXE,
@@ -330,7 +314,7 @@ public class InventoryFull extends JavaPlugin implements Listener {
 			Material.GOLD_SPADE, Material.DIAMOND_AXE, Material.DIAMOND_HOE,
 			Material.DIAMOND_PICKAXE, Material.DIAMOND_SPADE });
 
-	private static List<Material> ignored = Arrays.asList(new Material[] {
+	public static List<Material> ignored = Arrays.asList(new Material[] {
 			Material.LONG_GRASS, Material.GRASS, Material.WHEAT,
 			Material.SUGAR_CANE_BLOCK, Material.SUGAR_CANE, Material.BED_BLOCK,
 			Material.BED, Material.BOAT, Material.BOOKSHELF,

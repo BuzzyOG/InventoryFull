@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="C:/Users/Ryan/Downloads/TitleManager-1.2.1.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Ryan/Downloads/HolographicDisplays.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Ryan/Desktop/ActionAnnouncer.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Ryan/Desktop/AutoSell.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
